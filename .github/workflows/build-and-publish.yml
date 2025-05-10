@@ -128,9 +128,10 @@ jobs:
       - name: Build nuget package
         run: dotnet pack -c Release -o pkg
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: LibCubiomes.Native
           path: pkg/*
+          if-no-files-found: error
 #      - name: Publish package to github nuget registry
 #        run: dotnet nuget push pkg/*.nupkg -k ${{ secrets.GITHUB_TOKEN }} -s https://nuget.pkg.github.com/unminednet/index.json --skip-duplicate
