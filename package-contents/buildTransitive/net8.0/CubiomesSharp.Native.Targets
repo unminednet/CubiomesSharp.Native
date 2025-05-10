@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+      <_ResolvedRuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</_ResolvedRuntimeIdentifier>
+      <_ResolvedRuntimeIdentifier Condition="'$(_ResolvedRuntimeIdentifier)' == ''">win-x64</_ResolvedRuntimeIdentifier>
+    </PropertyGroup>
+
+  <Target Name="CopyNativeLibraries" AfterTargets="Build">
+    <ItemGroup>
+      <_NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\%(_ResolvedRuntimeIdentifier)\native\libcubiomes.*" />
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="@(_NativeLibs)"
+      DestinationFolder="$(OutDir)"
+      SkipUnchangedFiles="true"
+      Condition="@( _NativeLibs -> Count() ) &gt; 0" />
+  </Target>
+  
+</Project>

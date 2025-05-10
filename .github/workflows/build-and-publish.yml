@@ -1,0 +1,136 @@
+name: Build and publish
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+
+  build-linux-x64:
+    name: Build for linux-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "20"
+      - name: Build
+        working-directory: LibCubiomes
+        run: |
+          cmake -B build
+          cmake --build build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "linux-x64"
+          path: LibCubiomes/build/cubiomes/libcubiomes.so
+          if-no-files-found: error
+
+  build-win-x64:
+    name: Build for win-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+      - name: Build
+        working-directory: LibCubiomes
+        run: |
+          cmake -DCMAKE_TOOLCHAIN_FILE=toolchain-win-x64.cmake -B build
+          cmake --build build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "win-x64"
+          path: LibCubiomes/build/cubiomes/libcubiomes.dll
+          if-no-files-found: error
+
+  build-osx-arm64:
+    name: Build for osx-arm64
+    runs-on: macos-14
+    env:
+      CMAKE_OSX_ARCHITECTURES: arm64
+      MACOSX_DEPLOYMENT_TARGET: 11.0
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build
+        working-directory: LibCubiomes
+        run: |
+          cmake -B build
+          cmake --build build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "osx-arm64"
+          path: LibCubiomes/build/cubiomes/libcubiomes.dylib
+          if-no-files-found: error
+
+  build-osx-x64:
+    name: Build for osx-x64
+    runs-on: macos-14
+    env:
+      CMAKE_OSX_ARCHITECTURES: x86_64
+      MACOSX_DEPLOYMENT_TARGET: 11.0
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build
+        working-directory: LibCubiomes
+        run: |
+          cmake -B build
+          cmake --build build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "osx-x64"
+          path: LibCubiomes/build/cubiomes/libcubiomes.dylib
+          if-no-files-found: error
+
+  build-and-publish-nuget:
+    name: Build and publish nuget package
+    needs:
+      - build-linux-x64
+      - build-win-x64
+      - build-osx-arm64
+      - build-osx-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: natives
+      - name: Copy natives
+        run: find natives -type f -exec bash -c 'for f; do runtime="${f#natives/}"; runtime="${runtime%%/*}"; mkdir -p "package-contents/runtimes/$runtime/native" && cp "$f" "package-contents/runtimes/$runtime/native/"; done' bash {} +
+      - name: Build nuget package
+        run: dotnet pack -c Release -o pkg
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: LibCubiomes.Native
+          path: pkg/*
+#      - name: Publish package to github nuget registry
+#        run: dotnet nuget push pkg/*.nupkg -k ${{ secrets.GITHUB_TOKEN }} -s https://nuget.pkg.github.com/unminednet/index.json --skip-duplicate

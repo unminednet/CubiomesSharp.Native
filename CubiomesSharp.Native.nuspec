@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>CubiomesSharp.Native</id>
+    <version>0.1.0</version>
+    <authors>megasys</authors>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/unminednet/CubiomesSharp.Native</projectUrl>
+    <description>CubiomesSharp dependency containing native binaries of cubiomes</description>
+    <tags>minecraft cubiomes</tags>
+    <repository type="git" url="https://github.com/unminednet/CubiomesSharp.Native.git" />
+  </metadata>
+</package>
